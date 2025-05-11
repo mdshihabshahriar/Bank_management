@@ -3,13 +3,11 @@
         <span class="font-semibold text-xl tracking-tight text-blue-900"><a href="/">Mamar Bank</a></span>
     </div>
     <div class="block lg:hidden">
-        <button class="flex items-center px-3 py-2 border rounded text-white border-white-400 hover:text-white hover:border-white">
-            <svg class="fill-current h-3 w-3" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><title>Menu</title><path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/></svg>
+        <button id="hamburger-btn" class="flex items-center px-3 py-2 border rounded text-white border-white-400 hover:text-gray-700 hover:border-gray-700 focus:outline-none">
+            <svg class="fill-current h-5 w-5 text-blue-900" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><title>Menu</title><path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/></svg>
         </button>
     </div>
-    <!-- Register Login non logged in user er jonne -->
-    <!-- Report , Withdraw, Deposit       Profile Logout logged in user -->
-    <div class="w-full block flex-grow lg:flex lg:items-center lg:w-auto px-10">
+    <div class="w-full block flex-grow lg:flex lg:items-center lg:w-auto px-10" id="nav-links">
         {% if request.user.is_authenticated %}
             <div class="text-md lg:flex-grow">
                 <a href="{% url 'transaction_report' %}" class="block mt-4 lg:inline-block lg:mt-0 text-blue-900 hover:text-red-900 hover:font-black mr-4">
@@ -24,12 +22,21 @@
                 <a href="{% url 'loan_request' %}" class="block mt-4 lg:inline-block lg:mt-0 text-blue-900 hover:text-red-900 hover:font-black mr-4">
                     Loan Request
                 </a>
+                <a href="{% url 'transfer' %}" class="block mt-4 lg:inline-block lg:mt-0 text-blue-900 hover:text-red-900 hover:font-black mr-4">
+                    Transfer
+                </a>
+                <a href="{% url 'password_change' %}" class="block mt-4 lg:inline-block lg:mt-0 text-blue-900 hover:text-red-900 hover:font-black mr-4">
+                    Change Password
+                </a>
             </div>
             <div class="flex w-auto">
                 <div class="text-blue-900 my-auto font-black px-5">Welcome, {{ request.user.first_name }} (balance : {{request.user.account.balance}}) </div>
 
                 <a href="{% url 'profile' %}" class="mx-2 inline-block font-medium text-sm px-4 py-2 leading-none bg-blue-900 rounded text-white border-white hover:border-transparent hover:text-dark hover:bg-red-700 mt-4 lg:mt-0">Profile</a>
-                <a href="{% url 'logout' %}" class="mx-2 inline-block font-medium text-sm px-4 py-2 leading-none bg-blue-900 rounded text-white border-white hover:border-transparent hover:text-dark hover:bg-red-700 mt-4 lg:mt-0">Logout</a>
+                <form action='{% url 'logout' %}' method='post'>
+                    {% csrf_token %}
+                    <button type="submit" class="mx-2 inline-block font-medium text-sm px-4 py-2 leading-none bg-blue-900 rounded text-white border-white hover:border-transparent hover:text-dark hover:bg-red-700 mt-4 lg:mt-0">Logout</button>
+                </form>
             </div>
         {% else %}
             <div class="text-md lg:flex-grow"></div>
@@ -42,3 +49,11 @@
         {% endif %}
     </div>
 </nav>
+
+<!-- JavaScript for Hamburger Menu Toggle -->
+<script>
+    document.getElementById('hamburger-btn').addEventListener('click', function() {
+        const navLinks = document.getElementById('nav-links');
+        navLinks.classList.toggle('hidden'); // Toggle visibility of the nav menu
+    });
+</script>

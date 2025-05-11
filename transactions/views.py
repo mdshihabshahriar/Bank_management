@@ -7,14 +7,32 @@ from django.views import View
 from django.http import HttpResponse
 from django.views.generic import CreateView, ListView
 from transactions.constants import DEPOSIT, WITHDRAWAL,LOAN, LOAN_PAID
+from django.core.mail import EmailMessage,EmailMultiAlternatives
+from django.template.loader import render_to_string
 from datetime import datetime
 from django.db.models import Sum
+from django.shortcuts import render, redirect
+from transactions.forms import WithdrawForm, TransferForm
+from django.contrib.auth.views import PasswordChangeView
+from django.core.mail import send_mail
+from django.urls import reverse_lazy
 from transactions.forms import (
     DepositForm,
     WithdrawForm,
     LoanRequestForm,
 )
 from transactions.models import Transaction
+
+
+def send_transactions_email(user,amount,subject,template):
+        
+        message = render_to_string(template, {
+        'user': user,
+        'amount': amount,
+        })
+        send_email = EmailMultiAlternatives(subject, '', to=[user.email])
+        send_email.attach_alternative(message,"text/html")
+        send_email.send()
 
 class TransactionCreateMixin(LoginRequiredMixin, CreateView):
     template_name = 'transactions/transaction_form.html'
@@ -63,7 +81,7 @@ class DepositMoneyView(TransactionCreateMixin):
             self.request,
             f'{"{:,.2f}".format(float(amount))}$ was deposited to your account successfully'
         )
-
+        send_transactions_email(self.request.user,amount,"Deposite Message","transactions/deposite_email.html")
         return super().form_valid(form)
 
 
@@ -87,7 +105,7 @@ class WithdrawMoneyView(TransactionCreateMixin):
             self.request,
             f'Successfully withdrawn {"{:,.2f}".format(float(amount))}$ from your account'
         )
-
+        send_transactions_email(self.request.user,amount,"Withdrawal Message","transactions/withdrawal_email.html")
         return super().form_valid(form)
 
 class LoanRequestView(TransactionCreateMixin):
@@ -108,7 +126,7 @@ class LoanRequestView(TransactionCreateMixin):
             self.request,
             f'Loan request for {"{:,.2f}".format(float(amount))}$ submitted successfully'
         )
-
+        send_transactions_email(self.request.user,amount,"Loan Request Message","transactions/loan_email.html")
         return super().form_valid(form)
     
 class TransactionReportView(LoginRequiredMixin, ListView):
@@ -181,3 +199,72 @@ class LoanListView(LoginRequiredMixin,ListView):
         queryset = Transaction.objects.filter(account=user_account,transaction_type=3)
         print(queryset)
         return queryset
+    
+
+class TransferAmountView(LoginRequiredMixin, View):
+    form_class = TransferForm
+    template_name = 'transactions/transfer.html'
+
+    def get(self, request, *args, **kwargs):
+        form = self.form_class(user_account=request.user.account)
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST, user_account=request.user.account)
+        if form.is_valid():
+            recipient_account = form.cleaned_data['recipient_account_number']
+            amount = form.cleaned_data['amount']
+            sender_account = request.user.account
+
+            if sender_account.balance >= amount:
+                # Check for bankrupt status
+                if Transaction.objects.filter(bankrupt=True).exists():
+                    messages.error(request, 'The bank is bankrupt. Transfers are not allowed.')
+                else:
+                    # Update balances
+                    sender_account.balance -= amount
+                    recipient_account.balance += amount
+                    sender_account.save()
+                    recipient_account.save()
+
+                    # Record transactions
+                    Transaction.objects.create(
+                        account=sender_account,
+                        amount=-amount,
+                        balance_after_transaction=sender_account.balance,
+                        transaction_type=3,  # assuming '3' represents 'Transfer'
+                    )
+                    Transaction.objects.create(
+                        account=recipient_account,
+                        amount=amount,
+                        balance_after_transaction=recipient_account.balance,
+                        transaction_type=3,  # assuming '3' represents 'Transfer'
+                    )
+                    send_transactions_email(request.user, amount, "Transfer Sent", "transactions/transfer_email.html")
+                    send_transactions_email(recipient_account.user, amount, "Transfer Received", "transactions/transfer_received_email.html")
+
+                    messages.success(request, 'Amount transferred successfully.')
+                    return redirect('home')
+            else:
+                messages.error(request, 'Insufficient balance.')
+        else:
+            for error in form.errors.values():
+                messages.error(request, error)
+        return render(request, self.template_name, {'form': form})
+    
+
+class CustomPasswordChangeView(PasswordChangeView):
+    template_name = 'transactions/change_password.html'
+    success_url = reverse_lazy('password_change_done')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        username = self.request.user.username
+        send_mail(
+            'Password Change Notification',
+            f'Hello {username},\n\nYour password has been changed successfully.',
+            'shihabshahriar922@gmail.com',  # Replace with your email address
+            [self.request.user.email],
+            fail_silently=False,
+        )
+        return response
