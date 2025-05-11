@@ -6,6 +6,7 @@ Django
 django-crispy-forms
 django-email
 django-environ
+dj_database_url
 filelock
 mysql-connector-python
 numpy
