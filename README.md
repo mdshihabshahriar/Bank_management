@@ -56,18 +56,18 @@ Install Required Packages
 pip install -r requirements.txt
 pip install django psycopg2
 
-* Run Migrations
+Run Migrations
 
-- **python manage.py makemigrations
-- **python manage.py migrate
+python manage.py makemigrations
+python manage.py migrate
 
-* Create Superuser (Admin)
+Create Superuser (Admin)
 
-- **python manage.py createsuperuser
+python manage.py createsuperuser
 
-* Start the Development Server
+Start the Development Server
 
-- **python manage.py runserver
+python manage.py runserver
 
 Visit in browser:
 http://127.0.0.1:8000/
