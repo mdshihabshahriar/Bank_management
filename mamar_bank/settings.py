@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-import dj_database_url
+# import dj_database_url
 import environ
 env = environ.Env()
 environ.Env.read_env()
@@ -31,12 +31,13 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = ['https://bank-management-5f7y.onrender.com','https://*.127.0.0.1']
+ALLOWED_HOSTS = ["127.0.0.1", ".vercel.app"]
+# CSRF_TRUSTED_ORIGINS = ['https://bank-management-5f7y.onrender.com','https://*.127.0.0.1']
 
 # Application definition
 
 INSTALLED_APPS = [
+    "whitenoise.runserver_nostatic",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,6 +57,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -82,7 +84,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'mamar_bank.wsgi.application'
+WSGI_APPLICATION = 'mamar_bank.wsgi.app'
 
 
 # Database
@@ -96,6 +98,17 @@ WSGI_APPLICATION = 'mamar_bank.wsgi.application'
 # }
 
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres.buixbeyoyfrspjhkkzuc',
+        'PASSWORD': '@mamarbank',
+        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
+        'PORT': '6543'
+    }
+}
+
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -107,11 +120,11 @@ WSGI_APPLICATION = 'mamar_bank.wsgi.application'
 #     }
 # }
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default='postgresql://mamarbank_0ig9_user:D118bxD6bUWxTrKYdZxZnlN4i47YCXia@dpg-d0g8mla4d50c73fj7e1g-a.oregon-postgres.render.com/mamarbank_0ig9',
-    )
-}
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default='postgresql://mamarbank_0ig9_user:D118bxD6bUWxTrKYdZxZnlN4i47YCXia@dpg-d0g8mla4d50c73fj7e1g-a.oregon-postgres.render.com/mamarbank_0ig9',
+#     )
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -148,6 +161,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
